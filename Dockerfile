@@ -1,13 +1,26 @@
-# Use an official OpenJDK runtime as a parent image
-FROM openjdk:17-jdk-slim
+# Stage 1: Build the application
+FROM maven:3.9.4-eclipse-temurin-17 AS build
 
-# Set the working directory inside the container
+# Set the working directory for the build stage
 WORKDIR /app
 
-# Copy the JAR file into the container
-COPY target/sampleJenkinsDockerExample-0.0.1-SNAPSHOT.jar app.jar
+# Copy the project files into the container
+COPY pom.xml .
+COPY src ./src
 
-# Expose the application port (replace 8080 with your app's port)
+# Run Maven to build the application
+RUN mvn clean install -DskipTests
+
+# Stage 2: Create the runtime image
+FROM openjdk:17-jdk-slim
+
+# Set the working directory for the runtime stage
+WORKDIR /app
+
+# Copy the built JAR file from the build stage
+COPY --from=build /app/target/sampleJenkinsDockerExample-0.0.1-SNAPSHOT.jar app.jar
+
+# Expose the application port
 EXPOSE 8080
 
 # Specify the command to run the application
